@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 
 import os
-import jinja2
+from jinja2 import Environment, FileSystemLoader
 import configparser
+from distutils.dir_util import copy_tree
+
+# copy subdirectory example
+fromDirectory = "static"
+toDirectory = "docs"
+
+copy_tree(fromDirectory, toDirectory)
 
 def dir_str(path):
     # Create dir if desired
@@ -20,8 +27,8 @@ def get_contents(config, section, property):
     content = ''
     for filename in contains_valid:
         with open(filename, 'r') as file_:
-            content = content + '\n#' + os.path.basename(filename).split('.')[0] + 'Start\n' + \
-            file_.read() + '\n#' + os.path.basename(filename).split('.')[0] + 'End\n'
+            content = content + '\n<!-- ' + os.path.basename(filename).split('.')[0] + ' Start-->\n' + \
+            file_.read() + '\n<!-- ' + os.path.basename(filename).split('.')[0] + ' End-->\n'
 
     return content
 
@@ -30,18 +37,21 @@ def main():
     config = configparser.ConfigParser()
     config.read('pages.ini')
     pages = config.sections()
+    # copy subdirectory example
+    fromDirectory = "static"
+    toDirectory = "docs"
 
+    copy_tree(fromDirectory, toDirectory)
     # Create Page
     for page in pages:
-        outdir = config[page]['file_dir']
-        dir_str(outdir)
-        fname = os.path.join(outdir, config[page]['file_name'])
-        template_file = os.path.join('template', config[page]['file_template'])
+        dir_str('docs')
+        fname = os.path.join('docs', page.lower()+'.html')
+        template_file = os.path.join('templates', config[page]['file_template'])
         content = get_contents(config, page, 'main_contains')
         sidebar = get_contents(config, page, 'sidebar_contains')             
 
         with open(template_file, 'r') as file_:
-            templet = jinja2.Template(file_.read())
+            templet = Environment(loader=FileSystemLoader('templates/')).from_string(file_.read())
 
         with open(fname, 'w') as file_:
             file_.write(templet.render(content=content, sidebar=sidebar))
